@@ -10,4 +10,4 @@ target_link_libraries(autosub PRIVATE CURL::libcurl)
 
 include(GNUInstallDirs)
 install(TARGETS autosub DESTINATION ${CMAKE_INSTALL_BINDIR})
-
+install(DIRECTORY etc/autosub DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
