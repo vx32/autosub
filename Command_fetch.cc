@@ -52,7 +52,7 @@ std::string autosub::fetch(const std::string &url) {
   curl_easy_setopt(ec.curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(ec.curl, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
   curl_easy_setopt(ec.curl, CURLOPT_WRITEDATA, (void *)&ec);
-  curl_easy_setopt(ec.curl, CURLOPT_USERAGENT, "autosub-agent/0.1");
+  curl_easy_setopt(ec.curl, CURLOPT_USERAGENT, "clash");
 
   CURLcode res = curl_easy_perform(ec.curl);
   if (res != CURLcode::CURLE_OK) {
