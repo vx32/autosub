@@ -2,11 +2,11 @@
 #include "Replacer.hh"
 #include "StringUtils.hh"
 
+#include <iostream>
 #include <istream>
 #include <map>
+#include <memory>
 #include <ostream>
-
-#include <iostream>
 
 namespace autosub {
 void Target::save(std::ostream &os) {
@@ -34,32 +34,42 @@ std::unique_ptr<Target> TargetSupport::make_from_url(std::string_view url) {
 std::unique_ptr<Target> TargetSupport::make_from_stream(std::istream &is) {
   return nullptr;
 }
-
-std::map<std::string, TargetSupport *> g_all_support_url;
-std::map<std::string, TargetSupport *> g_all_support_tp;
+using SupMap = std::map<std::string, TargetSupport *>;
+std::unique_ptr<SupMap> g_all_support_url = nullptr;
+std::unique_ptr<SupMap> g_all_support_tp = nullptr;
+static void init_check() {
+  if (!g_all_support_url)
+    g_all_support_url = std::make_unique<SupMap>();
+  if (!g_all_support_tp)
+    g_all_support_tp = std::make_unique<SupMap>();
+}
 bool TargetSupport::register_url(std::string header, TargetSupport *sup) {
-  auto p = g_all_support_url.insert({header, sup});
+  init_check();
+  auto p = g_all_support_url->insert({header, sup});
   return p.second;
 }
 bool TargetSupport::register_type(std::string type, TargetSupport *sup) {
-  auto p = g_all_support_tp.insert({type, sup});
+  init_check();
+  auto p = g_all_support_tp->insert({type, sup});
   return p.second;
 }
 
 std::unique_ptr<Target> TargetFactory::make_from_url(std::string_view url) {
+  init_check();
   auto pos = url.find(':');
   if (pos + 2 >= url.size())
     return nullptr;
   if (url[pos + 1] != '/' || url[pos + 2] != '/')
     return nullptr;
   std::string_view header = url.substr(0, pos + 3);
-  auto it = g_all_support_url.find(std::string{header});
-  if (it == g_all_support_url.end())
+  auto it = g_all_support_url->find(std::string{header});
+  if (it == g_all_support_url->end())
     return nullptr;
   return it->second->make_from_url(url);
 }
 
 std::unique_ptr<Target> TargetFactory::make_from_stream(std::istream &is) {
+  init_check();
   std::string_view target_tag = "Target ";
   std::string target_line;
   std::getline(is, target_line);
@@ -68,8 +78,8 @@ std::unique_ptr<Target> TargetFactory::make_from_stream(std::istream &is) {
     return nullptr;
   if (sv.empty())
     return nullptr;
-  auto it = g_all_support_tp.find(std::string{sv});
-  if (it == g_all_support_tp.end()) {
+  auto it = g_all_support_tp->find(std::string{sv});
+  if (it == g_all_support_tp->end()) {
     return nullptr;
   }
   return it->second->make_from_stream(is);
